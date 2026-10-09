@@ -54,11 +54,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Countdown Timer - Deadline: Friday 9 October 2026 23:59:59 (local)
+  // Countdown Timer - Deadline: Thursday 31 December 2026 23:59:59 (local)
   const countdownEl = document.getElementById('countdown');
   if (countdownEl) {
-    // October 9, 2026 23:59:59
-    const deadline = new Date('2026-10-09T23:59:59').getTime();
+    // December 31, 2026 23:59:59
+    const deadline = new Date('2026-12-31T23:59:59').getTime();
     
     function updateCountdown() {
       const now = new Date().getTime();

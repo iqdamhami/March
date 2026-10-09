@@ -2,7 +2,36 @@
  * AuthAPI + مخزن محلي (يعمل بدون خادم)
  * يحاول الاتصال بـ localhost:4000 أولاً، وإن فشل يستخدم localStorage
  */
-const API_BASE = window.MARCH_API_BASE || 'http://localhost:4000/api';
+/**
+ * ترتيب مصادر الـ API:
+ * 1) window.MARCH_API_BASE إن وُجد
+ * 2) PHP على نفس النطاق: ./api/index.php?r=... أو /api/index.php?r=...
+ * 3) Node المحلي: http://localhost:4000/api
+ * 4) عند الفشل: localStorage
+ */
+function marchApiCandidates(path) {
+  const clean = path.replace(/^\//, '');
+  const list = [];
+  if (window.MARCH_API_BASE) {
+    list.push(String(window.MARCH_API_BASE).replace(/\/$/, '') + '/' + clean);
+  }
+  // PHP (استضافة عامة)
+  const origin = window.location.origin;
+  const basePath = window.location.pathname.replace(/\/[^/]*$/, '/');
+  // من pages/ → ../api/
+  const phpRel = /\/pages\//i.test(window.location.pathname)
+    ? '../api/index.php?r=' + encodeURIComponent(clean)
+    : (basePath + 'api/index.php?r=' + encodeURIComponent(clean)).replace(/\/+/g, '/');
+  if (origin && origin !== 'null' && origin.indexOf('file:') !== 0) {
+    list.push(origin + (phpRel.startsWith('/') ? phpRel : '/' + phpRel.replace(/^\.\//, '')));
+    // محاولة مطلقة من جذر الموقع
+    list.push(origin + '/api/index.php?r=' + encodeURIComponent(clean));
+  }
+  list.push('http://localhost:4000/api/' + clean);
+  list.push('http://127.0.0.1:4000/api/' + clean);
+  // إزالة تكرار
+  return [...new Set(list)];
+}
 const LS_KEY = 'march_db_v1';
 const ADMIN_EMAIL = 'admin@march.local';
 const ADMIN_PASSWORD = 'Admin@MARCH2026';
@@ -460,43 +489,46 @@ const AuthAPI = {
     const token = localStorage.getItem('march_token');
     if (token) headers['Authorization'] = 'Bearer ' + token;
 
-    // محاولة الخادم أولاً (مهلة قصيرة)
+    // محاولة كل مرشحي الـ API ثم المحلي
+    const urls = marchApiCandidates(path);
+    let lastNetErr = null;
+    for (const url of urls) {
+      try {
+        const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+        const timer = controller ? setTimeout(() => controller.abort(), 2800) : null;
+        const res = await fetch(url, {
+          ...options,
+          headers,
+          credentials: 'include',
+          signal: controller ? controller.signal : undefined,
+        });
+        if (timer) clearTimeout(timer);
+        let data;
+        try {
+          data = await res.json();
+        } catch {
+          lastNetErr = new Error('استجابة غير صالحة');
+          continue;
+        }
+        if (!res.ok) {
+          const err = new Error(data.error || 'حدث خطأ');
+          err.code = data.code;
+          err.details = data.details;
+          err.response = data;
+          throw err;
+        }
+        data._mode = 'server';
+        data._url = url;
+        return data;
+      } catch (e) {
+        if (e && e.code && e.code !== 'NETWORK_ERROR') throw e;
+        lastNetErr = e;
+      }
+    }
     try {
-      const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
-      const timer = controller ? setTimeout(() => controller.abort(), 2500) : null;
-      const res = await fetch(API_BASE + path, {
-        ...options,
-        headers,
-        signal: controller ? controller.signal : undefined,
-      });
-      if (timer) clearTimeout(timer);
-
-      let data;
-      try {
-        data = await res.json();
-      } catch {
-        throw new Error('استجابة غير صالحة من الخادم');
-      }
-      if (!res.ok) {
-        const err = new Error(data.error || 'حدث خطأ');
-        err.code = data.code;
-        err.details = data.details;
-        err.response = data;
-        throw err;
-      }
-      data._mode = 'server';
-      return data;
-    } catch (networkOrHttpErr) {
-      // أخطاء التحقق من الخادم (400/401...) لا نعيد توجيهها للمحلي إن وصلت استجابة
-      if (networkOrHttpErr.code && networkOrHttpErr.code !== 'NETWORK_ERROR') {
-        throw networkOrHttpErr;
-      }
-      // فشل الشبكة / الخادم متوقف → الوضع المحلي
-      try {
-        return localRequest(path, options);
-      } catch (localErr) {
-        throw localErr;
-      }
+      return localRequest(path, options);
+    } catch (localErr) {
+      throw localErr;
     }
   },
 
