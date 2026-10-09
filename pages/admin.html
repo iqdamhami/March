@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>لوحة الإدارة | MARCH EOI</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .tabs { display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:1.5rem; }
+    .tab-btn { padding:0.6rem 1.2rem; border-radius:8px; border:1.5px solid var(--border); background:#fff; font-weight:700; cursor:pointer; }
+    .tab-btn.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+    .tab-panel { display:none; }
+    .tab-panel.active { display:block; }
+    .admin-table { width:100%; border-collapse:collapse; font-size:0.9rem; }
+    .admin-table th, .admin-table td { padding:0.75rem; border-bottom:1px solid var(--border); text-align:right; vertical-align:top; }
+    .admin-table th { background:var(--bg-section); font-weight:700; }
+    .badge { display:inline-block; padding:0.2rem 0.6rem; border-radius:50px; font-size:0.75rem; font-weight:700; }
+    .badge-pending { background:#FEF3C7; color:#B45309; }
+    .badge-approved { background:#D1FAE5; color:#065F46; }
+    .badge-rejected { background:#FEE2E2; color:#B91C1C; }
+    .badge-new { background:#E0F2FE; color:#0369A1; }
+    .actions { display:flex; gap:0.4rem; flex-wrap:wrap; }
+    .btn-xs { padding:0.35rem 0.7rem; font-size:0.8rem; border-radius:6px; border:none; cursor:pointer; font-weight:700; }
+    .btn-ok { background:#059669; color:#fff; }
+    .btn-no { background:#DC2626; color:#fff; }
+    .btn-muted { background:#E2E8F0; color:#334155; }
+    .reply-box { width:100%; min-height:70px; margin-top:0.5rem; padding:0.5rem; border-radius:8px; border:1px solid var(--border); }
+  </style>
+</head>
+<body class="admin-page">
+  <header class="header">
+    <div class="container header-inner">
+      <a href="admin.html" class="logo"><div class="logo-icon">M</div><span>MARCH · إدارة</span></a>
+      <nav class="nav" aria-label="قائمة الإدارة"></nav>
+      <div class="header-actions">
+        <button class="menu-toggle" aria-label="القائمة"><span></span><span></span><span></span></button>
+      </div>
+    </div>
+  </header>
+
+  <section class="page-header">
+    <div class="container">
+      <h1>لوحة إدارة المنصة</h1>
+      <div class="breadcrumb"><span id="adminName">المسؤول</span></div>
+    </div>
+  </section>
+
+  <section class="content-area">
+    <div class="container">
+      <div id="adminError" class="alert alert-warning" style="display:none;"></div>
+
+      <div class="tabs">
+        <button type="button" class="tab-btn active" data-tab="users">الحسابات</button>
+        <button type="button" class="tab-btn" data-tab="eoi">طلبات EOI</button>
+        <button type="button" class="tab-btn" data-tab="inbox">الاستفسارات</button>
+        <button type="button" class="tab-btn" data-tab="password">كلمة المرور</button>
+      </div>
+
+      <div class="content-card tab-panel active" id="tab-users">
+        <div class="d-flex justify-between align-center flex-wrap gap-2 mb-3">
+          <h2 style="border:none;margin:0;padding:0;">الحسابات وطلبات التسجيل</h2>
+          <select id="userFilter" class="form-control" style="width:auto;min-width:160px;">
+            <option value="all">الكل</option>
+            <option value="pending" selected>بانتظار الموافقة</option>
+            <option value="approved">موافق عليها</option>
+            <option value="rejected">مرفوضة</option>
+          </select>
+        </div>
+        <div id="usersBox"><p class="text-muted">جاري التحميل...</p></div>
+      </div>
+
+      <div class="content-card tab-panel" id="tab-eoi">
+        <h2 style="border:none;margin:0 0 1rem;padding:0;">جميع طلبات إبداء الاهتمام</h2>
+        <div id="eoiBox"><p class="text-muted">جاري التحميل...</p></div>
+      </div>
+
+      <div class="content-card tab-panel" id="tab-inbox">
+        <h2 style="border:none;margin:0 0 1rem;padding:0;">رسائل نموذج الاستفسار</h2>
+        <div id="inboxBox"><p class="text-muted">جاري التحميل...</p></div>
+      </div>
+
+      <div class="content-card tab-panel" id="tab-password">
+        <h2 style="border:none;margin:0 0 1rem;padding:0;">تغيير كلمة مرور المسؤول</h2>
+        <p class="text-muted" style="margin-bottom:1rem;">حدّث كلمة دخول حساب الإدارة. الحد الأدنى 8 أحرف.</p>
+        <form id="adminPassForm" style="max-width:420px;">
+          <div class="form-group">
+            <label for="curPass">كلمة المرور الحالية *</label>
+            <input type="password" id="curPass" class="form-control" required autocomplete="current-password">
+          </div>
+          <div class="form-group">
+            <label for="newPass">كلمة المرور الجديدة *</label>
+            <input type="password" id="newPass" class="form-control" required minlength="8" autocomplete="new-password">
+          </div>
+          <div class="form-group">
+            <label for="newPass2">تأكيد كلمة المرور الجديدة *</label>
+            <input type="password" id="newPass2" class="form-control" required minlength="8" autocomplete="new-password">
+          </div>
+          <div id="passMsg" class="alert" style="display:none;margin-bottom:1rem;"></div>
+          <button type="submit" class="btn btn-primary">حفظ كلمة المرور</button>
+        </form>
+        <hr style="margin:2rem 0;border:none;border-top:1px solid var(--border);">
+        <p class="text-muted" style="font-size:0.9rem;">لإعادة تعيين كلمة مرور مستخدم آخر: من تبويب «الحسابات» اضغط «تعيين كلمة مرور» بجانب الحساب.</p>
+      </div>
+    </div>
+  </section>
+
+  <script src="../js/main.js?v=pw1"></script>
+  <script src="../js/auth.js?v=pw1"></script>
+  <script>
+  (function () {
+    if (!AuthAPI.requireAuth()) return;
+    const user = AuthAPI.getUser();
+    if (!user || user.role !== 'admin') {
+      document.getElementById('adminError').style.display = 'flex';
+      document.getElementById('adminError').innerHTML = '<span>🔒</span><div>هذه الصفحة للمسؤولين فقط.</div>';
+      return;
+    }
+    document.getElementById('adminName').textContent = user.full_name || user.email;
+
+    // Tabs
+    document.querySelectorAll('.tab-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach((p) => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+      });
+    });
+
+    const badge = (s) => {
+      const map = {
+        pending: 'badge-pending', approved: 'badge-approved', rejected: 'badge-rejected',
+        new: 'badge-new', replied: 'badge-approved', submitted: 'badge-new',
+        under_review: 'badge-pending', shortlisted: 'badge-approved',
+        invited_full: 'badge-approved', draft: 'badge-pending',
+      };
+      const labels = {
+        pending: 'قيد الانتظار', approved: 'موافق', rejected: 'مرفوض',
+        new: 'جديد', replied: 'تم الرد', submitted: 'مُقدَّم',
+        under_review: 'قيد المراجعة', shortlisted: 'مرشّح',
+        invited_full: 'دعوة لمقترح كامل', draft: 'مسودة',
+      };
+      return `<span class="badge ${map[s] || 'badge-muted'}">${labels[s] || s}</span>`;
+    };
+
+    async function loadUsers() {
+      const box = document.getElementById('usersBox');
+      const filter = document.getElementById('userFilter').value;
+      try {
+        const res = await AdminAPI.users(filter);
+        const list = res.data.users || [];
+        if (!list.length) {
+          box.innerHTML = '<p class="text-muted">لا توجد حسابات في هذا التصنيف.</p>';
+          return;
+        }
+        box.innerHTML = `<table class="admin-table"><thead><tr>
+          <th>الاسم</th><th>البريد</th><th>الهاتف</th><th>الحالة</th><th>تاريخ التسجيل</th><th>إجراءات</th>
+        </tr></thead><tbody>${list.map((u) => `
+          <tr>
+            <td>${esc(u.full_name)}</td>
+            <td>${esc(u.email)}</td>
+            <td>${esc(u.phone || '—')}</td>
+            <td>${badge(u.approval_status)}</td>
+            <td>${fmt(u.created_at)}</td>
+            <td class="actions">
+              ${u.approval_status !== 'approved' ? `<button class="btn-xs btn-ok" data-approve="${u.id}">موافقة</button>` : ''}
+              ${u.approval_status !== 'rejected' ? `<button class="btn-xs btn-no" data-reject="${u.id}">رفض</button>` : ''}
+              <button class="btn-xs btn-muted" data-setpass="${u.id}" data-email="${esc(u.email)}">تعيين كلمة مرور</button>
+            </td>
+          </tr>`).join('')}</tbody></table>`;
+
+        box.querySelectorAll('[data-approve]').forEach((b) => b.onclick = async () => {
+          if (!confirm('الموافقة على هذا الحساب؟')) return;
+          await AdminAPI.setUserApproval(b.dataset.approve, 'approved');
+          loadUsers();
+        });
+        box.querySelectorAll('[data-reject]').forEach((b) => b.onclick = async () => {
+          if (!confirm('رفض طلب إنشاء هذا الحساب؟')) return;
+          await AdminAPI.setUserApproval(b.dataset.reject, 'rejected');
+          loadUsers();
+        });
+        box.querySelectorAll('[data-setpass]').forEach((b) => b.onclick = async () => {
+          const email = b.dataset.email || '';
+          const pw = prompt('أدخل كلمة المرور الجديدة للمستخدم:\n' + email);
+          if (pw == null) return;
+          if (String(pw).length < 8) { alert('كلمة المرور يجب 8 أحرف على الأقل'); return; }
+          try {
+            await AdminAPI.setUserPassword(b.dataset.setpass, pw);
+            alert('تم تحديث كلمة المرور');
+          } catch (e) {
+            alert(e.message || 'فشل التحديث');
+          }
+        });
+      } catch (e) {
+        box.innerHTML = `<p style="color:#B91C1C;">${esc(e.message)}</p>`;
+      }
+    }
+
+    async function loadEoi() {
+      const box = document.getElementById('eoiBox');
+      try {
+        const res = await AdminAPI.listEoi();
+        const list = res.data.applications || [];
+        if (!list.length) {
+          box.innerHTML = '<p class="text-muted">لا توجد طلبات.</p>';
+          return;
+        }
+        box.innerHTML = list.map((a) => `
+          <div class="card" style="margin-bottom:1rem;padding:1.25rem;">
+            <div class="d-flex justify-between flex-wrap gap-2">
+              <div>
+                <strong style="color:var(--primary);">${esc(a.reference_number)}</strong>
+                ${badge(a.status)}
+                <h3 style="margin:0.4rem 0;font-size:1.05rem;">${esc(a.project_title)}</h3>
+                <p class="text-muted" style="margin:0;font-size:0.85rem;">
+                  ${esc(a.applicant_name)} · ${esc(a.applicant_email)} · ${esc(a.institution_name)} · ${esc(a.axis_title)}
+                </p>
+                <p style="margin:0.75rem 0 0;font-size:0.9rem;">${esc((a.summary || '').slice(0, 280))}${(a.summary||'').length>280?'…':''}</p>
+              </div>
+            </div>
+            <div class="actions mt-2">
+              <select class="form-control" style="width:auto;" data-status-for="${a.id}">
+                <option value="">تغيير الحالة...</option>
+                <option value="under_review">قيد المراجعة</option>
+                <option value="shortlisted">مرشّح</option>
+                <option value="invited_full">دعوة لمقترح كامل</option>
+                <option value="rejected">رفض</option>
+              </select>
+              <button class="btn-xs btn-ok" data-save-status="${a.id}">حفظ الحالة</button>
+              <button class="btn-xs btn-no" data-del="${a.id}">حذف الطلب</button>
+            </div>
+          </div>`).join('');
+
+        box.querySelectorAll('[data-save-status]').forEach((b) => b.onclick = async () => {
+          const sel = box.querySelector(`[data-status-for="${b.dataset.saveStatus}"]`);
+          if (!sel.value) return alert('اختر الحالة');
+          await AdminAPI.setEoiStatus(b.dataset.saveStatus, sel.value);
+          loadEoi();
+        });
+        box.querySelectorAll('[data-del]').forEach((b) => b.onclick = async () => {
+          if (!confirm('حذف هذا الطلب نهائياً؟')) return;
+          await AdminAPI.deleteEoi(b.dataset.del);
+          loadEoi();
+        });
+      } catch (e) {
+        box.innerHTML = `<p style="color:#B91C1C;">${esc(e.message)}</p>`;
+      }
+    }
+
+    async function loadInbox() {
+      const box = document.getElementById('inboxBox');
+      try {
+        const res = await AdminAPI.listInquiries();
+        const list = res.data.inquiries || [];
+        if (!list.length) {
+          box.innerHTML = '<p class="text-muted">لا توجد رسائل.</p>';
+          return;
+        }
+        box.innerHTML = list.map((m) => `
+          <div class="card" style="margin-bottom:1rem;padding:1.25rem;">
+            <div class="d-flex justify-between flex-wrap gap-2">
+              <strong>${esc(m.name)} &lt;${esc(m.email)}&gt;</strong>
+              ${badge(m.status)}
+            </div>
+            <p class="text-muted" style="margin:0.35rem 0;font-size:0.85rem;">${esc(m.subject)} · ${fmt(m.created_at)} · ${esc(m.institution || '')}</p>
+            <p style="margin:0.5rem 0;">${esc(m.message)}</p>
+            ${m.admin_reply ? `<div class="alert alert-info" style="margin-top:0.75rem;"><strong>ردك:</strong> ${esc(m.admin_reply)}<br><small>${fmt(m.replied_at)}</small></div>` : `
+              <textarea class="reply-box" id="reply-${m.id}" placeholder="اكتب ردك هنا..."></textarea>
+              <button class="btn-xs btn-ok mt-1" data-reply="${m.id}">إرسال الرد للمستفسر</button>
+            `}
+          </div>`).join('');
+
+        box.querySelectorAll('[data-reply]').forEach((b) => b.onclick = async () => {
+          const text = document.getElementById('reply-' + b.dataset.reply).value.trim();
+          if (text.length < 2) return alert('اكتب الرد');
+          await AdminAPI.replyInquiry(b.dataset.reply, text);
+          loadInbox();
+        });
+      } catch (e) {
+        box.innerHTML = `<p style="color:#B91C1C;">${esc(e.message)}</p>`;
+      }
+    }
+
+    function esc(s) {
+      return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+    function fmt(d) {
+      if (!d) return '—';
+      try { return new Date(d).toLocaleString('ar'); } catch { return d; }
+    }
+
+
+    const passForm = document.getElementById('adminPassForm');
+    if (passForm) {
+      passForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const cur = document.getElementById('curPass').value;
+        const n1 = document.getElementById('newPass').value;
+        const n2 = document.getElementById('newPass2').value;
+        const msg = document.getElementById('passMsg');
+        msg.style.display = 'block';
+        if (n1 !== n2) {
+          msg.className = 'alert alert-warning';
+          msg.textContent = 'كلمتا المرور الجديدتان غير متطابقتين';
+          return;
+        }
+        if (n1.length < 8) {
+          msg.className = 'alert alert-warning';
+          msg.textContent = 'كلمة المرور الجديدة يجب 8 أحرف على الأقل';
+          return;
+        }
+        try {
+          const res = await AdminAPI.changeOwnPassword(cur, n1);
+          msg.className = 'alert alert-info';
+          msg.textContent = res.message || 'تم التغيير بنجاح';
+          passForm.reset();
+        } catch (err) {
+          msg.className = 'alert alert-warning';
+          msg.textContent = err.message || 'فشل التغيير';
+        }
+      });
+    }
+
+    document.getElementById('userFilter').onchange = loadUsers;
+    loadUsers();
+    loadEoi();
+    loadInbox();
+  })();
+  </script>
+
+  <script data-admin-cleanup>
+    document.addEventListener('DOMContentLoaded', function () {
+      document.querySelectorAll('.header-actions a[href*="dashboard"]').forEach(function (a) { a.remove(); });
+    });
+  </script>
+</body>
+</html>

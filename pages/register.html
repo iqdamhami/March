@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>إنشاء حساب | MARCH EOI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .auth-wrapper { min-height: calc(100vh - 72px); display: flex; align-items: center; justify-content: center; padding: 2rem 1rem; }
+    .auth-card { background: var(--bg-white); border-radius: var(--radius); box-shadow: var(--shadow-lg); padding: 2.5rem; width: 100%; max-width: 480px; border: 1px solid var(--border); }
+    .auth-card h1 { text-align: center; margin-bottom: 0.5rem; font-size: 1.6rem; }
+    .auth-card .subtitle { text-align: center; color: var(--text-muted); margin-bottom: 2rem; font-size: 0.95rem; }
+    .error-box { background: #FEF2F2; border: 1px solid #FECACA; color: #B91C1C; padding: 0.85rem 1rem; border-radius: var(--radius-sm); margin-bottom: 1.25rem; font-size: 0.9rem; display: none; }
+    .error-box.show { display: block; }
+    .success-box { background: #ECFDF5; border: 1px solid #A7F3D0; color: #065F46; padding: 0.85rem 1rem; border-radius: var(--radius-sm); margin-bottom: 1.25rem; font-size: 0.9rem; display: none; }
+    .success-box.show { display: block; }
+    .field-error { color: #DC2626; font-size: 0.8rem; margin-top: 0.3rem; display: none; }
+    .form-control.error { border-color: #DC2626; }
+    .password-hints { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.4rem; }
+    .password-hints li { margin-bottom: 0.15rem; }
+    .password-hints .ok { color: #059669; }
+    .auth-footer { text-align: center; margin-top: 1.5rem; font-size: 0.9rem; color: var(--text-muted); }
+    .auth-footer a { color: var(--primary); font-weight: 700; }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="container header-inner">
+      <a href="../index.html" class="logo"><div class="logo-icon">M</div><span>MARCH</span></a>
+      <nav class="nav">
+        <a href="../index.html" class="nav-link">الرئيسية</a>
+        <a href="apply.html" class="nav-link">كيفية التقديم</a>
+        <a href="login.html" class="nav-link">تسجيل الدخول</a>
+      </nav>
+      <div class="header-actions">
+        <button class="menu-toggle" aria-label="القائمة"><span></span><span></span><span></span></button>
+      </div>
+    </div>
+  </header>
+
+  <div class="auth-wrapper">
+    <div class="auth-card">
+      <h1>إنشاء حساب جديد</h1>
+      <p class="subtitle">سجّل للمتابعة وتقديم طلبات إبداء الاهتمام</p>
+      
+      <div class="error-box" id="errorBox"></div>
+      <div class="success-box" id="successBox"></div>
+      
+      <form id="registerForm" novalidate>
+        <div class="form-group">
+          <label for="full_name">الاسم الكامل *</label>
+          <input type="text" id="full_name" class="form-control" required autocomplete="name" placeholder="د. أحمد محمد">
+          <div class="field-error" id="full_nameError"></div>
+        </div>
+        <div class="form-group">
+          <label for="email">البريد الإلكتروني *</label>
+          <input type="email" id="email" class="form-control" required autocomplete="email" placeholder="name@university.edu">
+          <div class="field-error" id="emailError"></div>
+        </div>
+        <div class="form-group">
+          <label for="phone">رقم الهاتف (اختياري)</label>
+          <input type="tel" id="phone" class="form-control" autocomplete="tel" placeholder="+961 1 234 567">
+          <div class="field-error" id="phoneError"></div>
+        </div>
+        <div class="form-group">
+          <label for="password">كلمة المرور *</label>
+          <input type="password" id="password" class="form-control" required autocomplete="new-password" placeholder="••••••••">
+          <ul class="password-hints" id="pwdHints">
+            <li id="hint-len">8 أحرف على الأقل</li>
+            <li id="hint-upper">حرف كبير واحد على الأقل</li>
+            <li id="hint-lower">حرف صغير واحد على الأقل</li>
+            <li id="hint-num">رقم واحد على الأقل</li>
+          </ul>
+          <div class="field-error" id="passwordError"></div>
+        </div>
+        <div class="form-group">
+          <label for="password2">تأكيد كلمة المرور *</label>
+          <input type="password" id="password2" class="form-control" required autocomplete="new-password">
+          <div class="field-error" id="password2Error"></div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg" style="width:100%;" id="submitBtn">إنشاء الحساب</button>
+      </form>
+      
+      <div class="auth-footer">
+        لديك حساب بالفعل؟ <a href="login.html">تسجيل الدخول</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/main.js"></script>
+  <script src="../js/auth.js"></script>
+  <script>
+    // Live password strength hints
+    document.getElementById('password').addEventListener('input', (e) => {
+      const v = e.target.value;
+      toggleHint('hint-len', v.length >= 8);
+      toggleHint('hint-upper', /[A-Z]/.test(v));
+      toggleHint('hint-lower', /[a-z]/.test(v));
+      toggleHint('hint-num', /[0-9]/.test(v));
+    });
+    function toggleHint(id, ok) {
+      const el = document.getElementById(id);
+      el.classList.toggle('ok', ok);
+    }
+
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearErrors();
+      const full_name = document.getElementById('full_name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+      const password = document.getElementById('password').value;
+      const password2 = document.getElementById('password2').value;
+      let valid = true;
+
+      if (full_name.length < 3) {
+        showFieldError('full_name', 'الاسم يجب أن يكون 3 أحرف على الأقل');
+        valid = false;
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showFieldError('email', 'أدخل بريداً إلكترونياً صالحاً');
+        valid = false;
+      }
+      if (password.length < 8 || !/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password)) {
+        showFieldError('password', 'كلمة المرور لا تستوفي الشروط');
+        valid = false;
+      }
+      if (password !== password2) {
+        showFieldError('password2', 'كلمتا المرور غير متطابقتين');
+        valid = false;
+      }
+      if (!valid) return;
+
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.textContent = 'جاري الإنشاء...';
+
+      try {
+        const res = await AuthAPI.register({ full_name, email, phone, password });
+        if (res.success) {
+          if (res.data && res.data.pending_approval) {
+            document.getElementById('successBox').textContent =
+              res.message || 'تم إرسال طلبك. بانتظار موافقة الإدارة قبل تسجيل الدخول.';
+            document.getElementById('successBox').classList.add('show');
+            form.reset();
+          } else if (res.data && res.data.token) {
+            AuthAPI.saveSession(res.data.token, res.data.user);
+            document.getElementById('successBox').textContent = 'تم إنشاء الحساب بنجاح! جاري التحويل...';
+            document.getElementById('successBox').classList.add('show');
+            setTimeout(() => { window.location.href = 'dashboard.html'; }, 1200);
+          } else {
+            document.getElementById('successBox').textContent = res.message || 'تم التسجيل';
+            document.getElementById('successBox').classList.add('show');
+          }
+        } else {
+          if (res.details && res.details.length) {
+            res.details.forEach(d => showFieldError(d.field, d.message));
+          }
+          showError(res.error || 'فشل إنشاء الحساب');
+        }
+      } catch (err) {
+        showError(err.message || 'تعذر الاتصال بالخادم. تأكد من تشغيل الـ API على المنفذ 4000.');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'إنشاء الحساب';
+      }
+    });
+
+    function showError(msg) {
+      const box = document.getElementById('errorBox');
+      box.textContent = msg;
+      box.classList.add('show');
+    }
+    function showFieldError(field, msg) {
+      const input = document.getElementById(field);
+      const err = document.getElementById(field + 'Error');
+      if (input) input.classList.add('error');
+      if (err) { err.textContent = msg; err.style.display = 'block'; }
+    }
+    function clearErrors() {
+      document.getElementById('errorBox').classList.remove('show');
+      document.getElementById('successBox').classList.remove('show');
+      document.querySelectorAll('.form-control').forEach(el => el.classList.remove('error'));
+      document.querySelectorAll('.field-error').forEach(el => { el.style.display = 'none'; el.textContent = ''; });
+    }
+  </script>
+</body>
+</html>
