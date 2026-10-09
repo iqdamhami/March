@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>لوحة التحكم | MARCH EOI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <header class="header">
+    <div class="container header-inner">
+      <a href="../index.html" class="logo"><div class="logo-icon">M</div><span>MARCH</span></a>
+      <nav class="nav">
+        <a href="../index.html" class="nav-link">الرئيسية</a>
+        <a href="apply.html" class="nav-link">تقديم طلب</a>
+        <a href="climate.html" class="nav-link">بيانات المناخ</a>
+      </nav>
+      <div class="header-actions">
+        <span id="userName" style="font-weight:600; color:var(--primary); margin-left:0.75rem;"></span>
+        <button class="btn btn-outline btn-sm" onclick="AuthAPI.logout()">خروج</button>
+        <button class="menu-toggle" aria-label="القائمة"><span></span><span></span><span></span></button>
+      </div>
+    </div>
+  </header>
+
+  <section class="page-header">
+    <div class="container">
+      <h1>لوحة التحكم</h1>
+      <div class="breadcrumb"><span>مرحباً بك في حسابك</span></div>
+    </div>
+  </section>
+
+  <section class="content-area">
+    <div class="container">
+      <div class="alert alert-info" id="welcomeAlert">
+        <span>👤</span>
+        <div>جاري تحميل بياناتك...</div>
+      </div>
+
+      <div class="content-card">
+        <div class="d-flex justify-between align-center flex-wrap gap-2 mb-3">
+          <h2 style="border:none; padding:0; margin:0;">طلباتي</h2>
+          <a href="apply.html" class="btn btn-primary btn-sm">+ طلب جديد</a>
+        </div>
+        <div id="appsList">
+          <p class="text-muted">جاري التحميل...</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script src="../js/main.js"></script>
+  <script src="../js/auth.js"></script>
+  <script>
+    if (!AuthAPI.requireAuth()) throw new Error('redirect');
+
+    const user = AuthAPI.getUser();
+    if (user) {
+      document.getElementById('userName').textContent = user.full_name;
+      document.getElementById('welcomeAlert').innerHTML =
+        `<span>👤</span><div>مرحباً <strong>${user.full_name}</strong> (${user.email})</div>`;
+    }
+
+    async function loadApps() {
+      const box = document.getElementById('appsList');
+      try {
+        const res = await EoiAPI.myApplications();
+        const apps = res.data.applications || [];
+        if (apps.length === 0) {
+          box.innerHTML = '<p class="text-muted">لا توجد طلبات بعد. <a href="apply.html" style="color:var(--primary);font-weight:700;">قدّم طلبك الأول</a></p>';
+          return;
+        }
+        const statusMap = {
+          draft: 'مسودة',
+          submitted: 'مُقدَّم',
+          under_review: 'قيد المراجعة',
+          shortlisted: 'مرشّح',
+          rejected: 'مرفوض',
+          invited_full: 'مدعو للمقترح الكامل',
+        };
+        box.innerHTML = apps.map(a => `
+          <div class="card" style="margin-bottom:1rem; padding:1.25rem;">
+            <div class="d-flex justify-between align-center flex-wrap gap-2">
+              <div>
+                <strong style="color:var(--primary);">${a.reference_number}</strong>
+                <h3 style="margin:0.35rem 0; font-size:1.05rem;">${a.project_title}</h3>
+                <span class="text-muted" style="font-size:0.85rem;">${a.axis_title} • ${a.institution_name}</span>
+              </div>
+              <span style="background:rgba(10,77,104,0.1); color:var(--primary); padding:0.35rem 0.85rem; border-radius:50px; font-weight:700; font-size:0.85rem;">
+                ${statusMap[a.status] || a.status}
+              </span>
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        box.innerHTML = `<p style="color:#B91C1C;">تعذر تحميل الطلبات: ${err.message}. تأكد من تشغيل الـ Backend.</p>`;
+      }
+    }
+    loadApps();
+
+    if (user && user.role === 'admin') {
+      const link = document.getElementById('adminNavLink');
+      if (link) link.style.display = '';
+      // banner
+      const alert = document.getElementById('welcomeAlert');
+      if (alert) {
+        alert.innerHTML += ' ·';
+      }
+    }
+
+    async function loadMessages() {
+      const container = document.querySelector('.content-area .container');
+      if (!container) return;
+      const card = document.createElement('div');
+      card.className = 'content-card';
+      card.innerHTML = '<h2 style="border:none;padding:0;margin:0 0 1rem;">رسائلي وردود الإدارة</h2><div id="msgsBox"><p class="text-muted">جاري التحميل...</p></div>';
+      container.appendChild(card);
+      try {
+        const res = await ContactAPI.myInquiries();
+        const list = res.data.inquiries || [];
+        const box = document.getElementById('msgsBox');
+        if (!list.length) {
+          box.innerHTML = '<p class="text-muted">لا توجد رسائل بعد. يمكنك إرسال استفسار من صفحة اتصل بنا.</p>';
+          return;
+        }
+        box.innerHTML = list.map((m) => `
+          <div style="border:1px solid var(--border);border-radius:8px;padding:1rem;margin-bottom:0.75rem;">
+            <strong>${m.subject}</strong>
+            <p class="text-muted" style="font-size:0.85rem;margin:0.25rem 0;">${new Date(m.created_at).toLocaleString('ar')} · ${m.status}</p>
+            <p style="margin:0.5rem 0;">${m.message}</p>
+            ${m.admin_reply ? `<div class="alert alert-info" style="margin:0.5rem 0 0;"><strong>رد الإدارة:</strong> ${m.admin_reply}<br><small>${m.replied_at ? new Date(m.replied_at).toLocaleString('ar') : ''}</small></div>` : '<p class="text-muted" style="margin:0;">بانتظار رد الإدارة</p>'}
+          </div>`).join('');
+      } catch (e) {
+        document.getElementById('msgsBox').innerHTML = '<p class="text-muted">تعذر تحميل الرسائل (قد يحتاج تشغيل الخادم).</p>';
+      }
+    }
+    loadMessages();
+  </script>
+</body>
+</html>
